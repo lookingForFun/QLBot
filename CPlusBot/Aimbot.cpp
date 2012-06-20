@@ -170,14 +170,14 @@ float Aimbot::AdvancedHumanization( float distance, idVec3 targetVelocity )
 #pragma warning(disable: 4244)
 idAngles Aimbot::Humanize( float smoothMultiplier, float smoothTransposition, idAngles inAngles )
 {
-	float l_smoothMultiplier = 1.0f + AdvancedHumanization( ImportExport::User->DistanceTo( TargetOrigin() ), 
+	float smoothMultiplier = 1.0f + AdvancedHumanization( ImportExport::User->DistanceTo( TargetOrigin() ), 
 		CurrentTarget()->Velocity() ) * ImportExport::Variables[SMOOTHADVANCEDSCALING]->FloatValue();
 
 	if(ImportExport::Variables[NEWHUMANIZATION]->IntValue())
 	{
 #define SUPER_SMOOTH_FUNC( x ) (float)(log(1.0 + x) / log(2.0))
 		float totalDist = sqrt(inAngles.pitch*inAngles.pitch + inAngles.yaw*inAngles.yaw);
-		float slowDown = SUPER_SMOOTH_FUNC( totalDist ) * l_smoothMultiplier * ImportExport::Variables[SMOOTHMULTIPLIER]->FloatValue()  + ImportExport::Variables[SMOOTHTRANSPOSITION]->FloatValue();
+		float slowDown = SUPER_SMOOTH_FUNC( totalDist ) * smoothMultiplier * ImportExport::Variables[SMOOTHMULTIPLIER]->FloatValue()  + ImportExport::Variables[SMOOTHTRANSPOSITION]->FloatValue();
 		inAngles.pitch /= max( slowDown, 1.0f );
 		inAngles.yaw /= max( slowDown, 1.0f ) ;
 	}
@@ -192,8 +192,8 @@ idAngles Aimbot::Humanize( float smoothMultiplier, float smoothTransposition, id
 		float xSlowDown = OLD_SMOOTH_FUNC( absYaw );
 		ySlowDown += smoothTransposition;
 		xSlowDown += smoothTransposition;
-		xSlowDown *= l_smoothMultiplier * ( smoothMultiplier / 2.0f );
-		ySlowDown *= l_smoothMultiplier * smoothMultiplier;
+		xSlowDown *= smoothMultiplier * ( smoothMultiplier / 2.0f );
+		ySlowDown *= smoothMultiplier * smoothMultiplier;
 		inAngles.pitch /= max( ySlowDown, 1.0f );
 		inAngles.yaw /= max( xSlowDown, 1.0f );
 	}

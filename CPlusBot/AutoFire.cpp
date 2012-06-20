@@ -25,12 +25,6 @@ bool AutoFire::AimingAtTarget()
 			}
 		}
 		idVec3 targOrg = ImportExport::AimBot->TargetOrigin();
-		/*return LineIntersection( user->EyePosition(),
-			user->EyePosition() +
-			user->ViewAngles().ToMat3()[ 0 ] *
-			user->DistanceTo( targOrg ),
-			targOrg + cmins,
-			targOrg + cmaxs );*/
 		idVec3 hit;
 		if(CheckLineBox( targOrg + cmins, targOrg + cmaxs,
 			user->EyePosition(), user->EyePosition() + (user->ViewAngles().ToMat3()[ 0 ] * user->DistanceTo( targOrg ) * 1.5f), hit))
