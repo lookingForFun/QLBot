@@ -161,7 +161,7 @@ void HookConsole::Initialize()
 
 void HookConsole::Unload()
 {
-	bOpen = false;
+	isOpen = false;
 	bInitialized = false;
 	UnhookWindowsHookEx(_hookHandle);
 	commands.clear();
@@ -170,17 +170,17 @@ void HookConsole::Unload()
 
 void HookConsole::Open()
 {
-	bOpen = true;
+	isOpen = true;
 }
 
 void HookConsole::Close()
 {
-	bOpen = false;
+	isOpen = false;
 }
 
 void HookConsole::Render()
 {
-	if(bOpen)
+	if(isOpen)
 	{
 		DrawUtils::FillRectangle(80, 60, 480, 360, consoleColor);
 		for (vector<string>::size_type i = 0; i < lines.size() ; ++i) {
@@ -193,8 +193,8 @@ void HookConsole::Render()
 		DrawUtils::FillRectangle(77,60 - 3,3,360 + 7, Colors::White);
 		DrawUtils::FillRectangle(80 + 480 - 3,60,3,360 + 3, Colors::White);
 
-		string sDisplayLine = sCurrentLine;
-		string::iterator it = sDisplayLine.begin() + iCursorPosition;
+		string sDisplayLine = currentLine;
+		string::iterator it = sDisplayLine.begin() + cursorPosition;
 
 		sDisplayLine.insert(it,1, (Engine::GetTime() % 400 > 200) ? '_' : ' ');
 
@@ -202,7 +202,7 @@ void HookConsole::Render()
 	}
 }
 
-bool HookConsole::CVarCommand(eLine currentCmd)
+bool HookConsole::CVarCommand(const eLine& currentCmd)
 {
 	var_t cvar = ImportExport::FindVarId(currentCmd.getWord(0));
 	if(cvar != VAR_NONE)
@@ -217,76 +217,70 @@ bool HookConsole::CVarCommand(eLine currentCmd)
 	return false;
 }
 
-void HookConsole::ProcessCommand( const string& szOriginalCmd )
-{
+void HookConsole::ProcessCommand( const string& originalCmd ) {
 	string args = "";
-	string l_cmd = string(szOriginalCmd);
-	if(!l_cmd.length())
+	string cmd = originalCmd;
+	if(!cmd.length()) {
 		return;
+	}
 	
-	if(bOpen)
-		AddLine(l_cmd, true);
+	if(isOpen) {
+		AddLine(cmd, true);
+	}
 	//convert the command string to lowercase
-	transform(l_cmd.begin(), l_cmd.end(), l_cmd.begin(), tolower);
+	transform(cmd.begin(), cmd.end(), cmd.begin(), tolower);
 	
 	string nextCmd;
-	do
-	{
+	do {
 		nextCmd = "";
 		//if we aren't inside a quote block
-		if (!ScanForQuotes(l_cmd.c_str()))
+		if (!ScanForQuotes(cmd.c_str()))
 		{
 			//search for the first command termination
-			auto l_newCmdPos = l_cmd.find_first_of(';');
-			if(l_newCmdPos != string::npos)
+			auto newCmdPos = cmd.find_first_of(';');
+			if(newCmdPos != string::npos)
 			{
 				//if a command termination is found, use the following part of the string as another command
-				l_newCmdPos++;
-				nextCmd = l_cmd.substr(l_newCmdPos, l_cmd.length() - l_newCmdPos);
-				l_cmd = l_cmd.substr(0, l_newCmdPos-1);
+				newCmdPos++;
+				nextCmd = cmd.substr(newCmdPos, cmd.length() - newCmdPos);
+				cmd = cmd.substr(0, newCmdPos-1);
 				if(nextCmd[0] == ' ')
 					nextCmd.erase(nextCmd.begin(), nextCmd.begin()+1);
 			}
 		}
 		
-		eLine currentCmd = eLine(l_cmd);
-		if(!currentCmd.wordCount())
+		eLine currentCmd = eLine(cmd);
+		if(!currentCmd.wordCount()) {
 			return;
-
-		if(l_cmd.find(';') == string::npos && l_cmd[0] == '"' && l_cmd[l_cmd.length()-1] == '"')
-		{
-			l_cmd.substr(1, l_cmd.length()-2);
 		}
-		string l_szCommandName = string(currentCmd.getWord(0));
-		map<string, void (*)(eLine*)>::iterator i = commands.find(l_szCommandName);
-		if(i == commands.end()) //not a registered command
-		{
-			if(!CVarCommand(currentCmd)) //not even a valid cvar
-			{
+
+		if(cmd.find(';') == string::npos && cmd[0] == '"' && cmd[cmd.length()-1] == '"') {
+			cmd.substr(1, cmd.length()-2);
+		}
+		string commandName = string(currentCmd.getWord(0));
+		auto itCmd = commands.find(commandName);
+		if(itCmd == commands.end()) { //not a registered command
+			if(!CVarCommand(currentCmd))  { //not even a valid cvar
 				AddLine(XORSTR("Unknown command"));
 			}
-		}
-		else //valid command, parse the args if it hasn't already been done
-		{
-			if(!args.length())
-			{
-				size_t l_argstart = l_cmd.find_first_of(' ');
-				if(l_argstart != string::npos)
-				{
-					l_argstart++;
-					args = l_cmd.substr(l_argstart, l_cmd.length() - l_argstart);
+		} else { //valid command, parse the args if it hasn't already been done
+			if(!args.length()) {
+				size_t argStart = cmd.find_first_of(' ');
+				if(argStart != string::npos) {
+					argStart++;
+					args = cmd.substr(argStart, cmd.length() - argStart);
 				}
 			}
-			if(!i->second)
+			if(!itCmd->second) {
 				continue;
-			if (args.length())
-			{
-				((cmdFunc_t)i->second)(&eLine(args));
-			} 
-			else
-				((cmdFunc_t)i->second)(nullptr);
+			}
+			if (args.length()) {
+				((cmdFunc_t)itCmd->second)(&eLine(args));
+			} else {
+				((cmdFunc_t)itCmd->second)(nullptr);
+			}
 		}
-		l_cmd = nextCmd;
+		cmd = nextCmd;
 		args = "";
 	} while (nextCmd.length());
 }
@@ -295,7 +289,7 @@ void HookConsole::ProcessCommand( const string& szOriginalCmd )
 void HookConsole::ProcessKeyPress(WPARAM wParam, bool isDown)
 {
 	string::iterator i1,i2;
-	if( bOpen )
+	if( isOpen )
 	{
 		if(!isDown)
 			return;
@@ -303,34 +297,34 @@ void HookConsole::ProcessKeyPress(WPARAM wParam, bool isDown)
 		{ 
 		case VK_F9:
 			SaveBinds();
-			bOpen = false;
-			iCursorPosition = sCurrentLine.length();
+			isOpen = false;
+			cursorPosition = currentLine.length();
 		break;
 		case VK_LEFT:
-			if (--iCursorPosition < 0)
-				iCursorPosition = 0;
+			if (--cursorPosition < 0)
+				cursorPosition = 0;
 		break;
 		case VK_RIGHT:
-			iCursorPosition++;
-			if ((size_t)iCursorPosition > sCurrentLine.length())
-				iCursorPosition = sCurrentLine.length();
+			cursorPosition++;
+			if ((size_t)cursorPosition > currentLine.length())
+				cursorPosition = currentLine.length();
 		break;
 		case VK_DELETE:
-			if (sCurrentLine.length())
+			if (currentLine.length())
 			{
-				i1 = sCurrentLine.begin() + iCursorPosition;
+				i1 = currentLine.begin() + cursorPosition;
 				i2 = i1 + 1;
-				sCurrentLine.erase(i1,i2);
+				currentLine.erase(i1,i2);
 			}
 			break;
 		case VK_BACK: // Process a backspace. 
-			if (sCurrentLine.length() && iCursorPosition)
+			if (currentLine.length() && cursorPosition)
 			{
-				i2 = sCurrentLine.begin() + iCursorPosition;
+				i2 = currentLine.begin() + cursorPosition;
 				i1 = i2 - 1;
-				sCurrentLine.erase(i1,i2);
-				if (--iCursorPosition < 0)
-					iCursorPosition = 0;
+				currentLine.erase(i1,i2);
+				if (--cursorPosition < 0)
+					cursorPosition = 0;
 			}
 			break; 
 		case VK_TAB: // Process a tab
@@ -338,9 +332,9 @@ void HookConsole::ProcessKeyPress(WPARAM wParam, bool isDown)
 			break; 
 
 		case VK_RETURN: // Process a carriage return
-			ProcessCommand(sCurrentLine);
-			sCurrentLine = "";
-			iCursorPosition = 0;
+			ProcessCommand(currentLine);
+			currentLine = "";
+			cursorPosition = 0;
 			break; 
 
 		default:
@@ -351,8 +345,8 @@ void HookConsole::ProcessKeyPress(WPARAM wParam, bool isDown)
 			//we only wanna render easily printable chars, from ! to z in the ASCII table
 			if((cPressedKey[0] > 0x20 && cPressedKey[0] < 0x80) || cPressedKey[0] == ' ')
 			{
-				sCurrentLine.insert(iCursorPosition,1,cPressedKey[0]);
-				iCursorPosition++;
+				currentLine.insert(cursorPosition,1,cPressedKey[0]);
+				cursorPosition++;
 			}
 			break; 
 		}
@@ -363,21 +357,21 @@ void HookConsole::ProcessKeyPress(WPARAM wParam, bool isDown)
 			return;
 		if(wParam == VK_F9 && isDown)
 		{
-			bOpen = true;
+			isOpen = true;
 			return;
 		}
-		char l_searchTerm;
+		char searchTerm;
 		if(KeyCodeToName(wParam))
-			l_searchTerm = wParam;
+			searchTerm = wParam;
 		else
 		{
 			BYTE btKeyboardState[256];
 			char cPressedKey[2] = "";
 			GetKeyboardState ( btKeyboardState );
 			ToAscii( wParam, 0, btKeyboardState, ( LPWORD )cPressedKey, 0 );
-			l_searchTerm = /*cPressedKey[0] > 0x20 && cPressedKey[0] < 0x80 ? cPressedKey[0] :*/ wParam;
+			searchTerm = /*cPressedKey[0] > 0x20 && cPressedKey[0] < 0x80 ? cPressedKey[0] :*/ wParam;
 		}
-		map<int, HookBind*>::iterator it = binds.find(l_searchTerm);
+		map<int, HookBind*>::iterator it = binds.find(searchTerm);
 		if(it != binds.end())
 		{
 			const char * boundCommand = it->second->getCmd(isDown);
@@ -393,8 +387,8 @@ void HookConsole::AddLine( const string& lineText, bool isCurrentLine )
 	lines.push_back(lineText);
 	if(isCurrentLine)
 	{
-		sCurrentLine = "";
-		iCursorPosition = 0;
+		currentLine = "";
+		cursorPosition = 0;
 	}
 }
 
@@ -438,18 +432,18 @@ void HookConsole::SaveBinds()
 		if(!it->second)
 			continue;
 	
-		string l_boundTo;
+		string boundTo;
 		if(it->second->IsNamedKey())
 		{
-			const char * l_keyName = KeyCodeToName(it->first);
-			if (l_keyName)
-				l_boundTo = l_keyName;
+			const char * keyName = KeyCodeToName(it->first);
+			if (keyName)
+				boundTo = keyName;
 			else
 				continue;
 		}
 		else
-			l_boundTo = it->first;
-		cfg << XORSTR("bind ") << l_boundTo << " " << it->second->saveBind () << endl;
+			boundTo = it->first;
+		cfg << XORSTR("bind ") << boundTo << " " << it->second->saveBind () << endl;
 	}
 	if(!ImportExport::SaveBinds (cfg.str ()))
 	{
@@ -477,9 +471,9 @@ const char * HookConsole::KeyCodeToName(int key)
 HookConsole::HookConsole()
 {
 	bInitialized = false;
-	bOpen = false;
-	iCursorPosition = 0;
-	sCurrentLine = "";
+	isOpen = false;
+	cursorPosition = 0;
+	currentLine = "";
 	lines.clear();
 	static float defaultColor[4] = { 0.5f, 0.5f, 1.0f, 0.5};
 	consoleColor = defaultColor;
@@ -505,12 +499,12 @@ std::string HookBind::saveBind()
 		return cmd;
 }
 
-const char * HookBind::getCmd( bool p_isKeyDown /*= true*/)
+const char * HookBind::getCmd( bool isKeyDown /*= true*/)
 {
-	bool l_bAction = (isKeyDown != p_isKeyDown);
-	if (l_bAction)
+	bool shouldChange = (isKeyDown != isKeyDown);
+	if (shouldChange)
 	{
-		isKeyDown = p_isKeyDown;
+		isKeyDown = isKeyDown;
 		if( isKeyDown )
 			return cmd.c_str();
 		else if ( keyUpCmd.length() > 0 )
@@ -528,7 +522,7 @@ HookBind::HookBind(const string& bindText, const string& pkeyUpCmd, bool isNamed
 		keyUpCmd = pkeyUpCmd;
 }
 
-void Stub_ConsolePrint(const char * p_lineTxt)
+void Stub_ConsolePrint(const char * lineTxt)
 {
-	hConsole.Print(p_lineTxt);
+	hConsole.Print(lineTxt);
 }

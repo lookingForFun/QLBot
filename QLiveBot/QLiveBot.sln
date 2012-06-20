@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QLiveBot", "QLiveBot.vcxproj", "{81C51899-DB75-1A64-8B0C-333845AA515C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QLiveBot", "QLiveBot.vcxproj", "{5238EB33-A157-432B-7393-039A764F8814}"
 	ProjectSection(ProjectDependencies) = postProject
 		{CD56B789-6B5A-436F-8F05-286026BF9D36} = {CD56B789-6B5A-436F-8F05-286026BF9D36}
 	EndProjectSection
@@ -14,10 +14,10 @@ Global
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{81C51899-DB75-1A64-8B0C-333845AA515C}.Debug|Win32.ActiveCfg = Debug|Win32
-		{81C51899-DB75-1A64-8B0C-333845AA515C}.Debug|Win32.Build.0 = Debug|Win32
-		{81C51899-DB75-1A64-8B0C-333845AA515C}.Release|Win32.ActiveCfg = Release|Win32
-		{81C51899-DB75-1A64-8B0C-333845AA515C}.Release|Win32.Build.0 = Release|Win32
+		{5238EB33-A157-432B-7393-039A764F8814}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5238EB33-A157-432B-7393-039A764F8814}.Debug|Win32.Build.0 = Debug|Win32
+		{5238EB33-A157-432B-7393-039A764F8814}.Release|Win32.ActiveCfg = Release|Win32
+		{5238EB33-A157-432B-7393-039A764F8814}.Release|Win32.Build.0 = Release|Win32
 		{CD56B789-6B5A-436F-8F05-286026BF9D36}.Debug|Win32.ActiveCfg = Debug|Win32
 		{CD56B789-6B5A-436F-8F05-286026BF9D36}.Debug|Win32.Build.0 = Debug|Win32
 		{CD56B789-6B5A-436F-8F05-286026BF9D36}.Release|Win32.ActiveCfg = Release|Win32

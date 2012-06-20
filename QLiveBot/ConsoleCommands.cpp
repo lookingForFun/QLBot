@@ -54,7 +54,7 @@ void Cmd_Exec(eLine * p_cmd)
 			if(curLine.wordCount() < 2)
 				break;
 			hConsole.ProcessCommand(curLine.getSource());
-			i++;
+			++i;
 		}
 	}
 }
@@ -77,92 +77,77 @@ void Cmd_Toggle(eLine * cmd)
 	}
 }
 
-void Cmd_Unbind(eLine * p_cmd)
-{
-	if(!p_cmd || !p_cmd->wordCount())
-		return;
-	int l_virtualKey = -1;
-	if(strlen(p_cmd->getWord(0)) == 1)
-		l_virtualKey = islower(p_cmd->getWord(0)[0]) ? _toupper(p_cmd->getWord(0)[0]) : p_cmd->getWord(0)[0];
-	else
-	{
-		l_virtualKey = HookConsole::KeyNameToCode(p_cmd->getWord(0));
-		if(l_virtualKey == -1)
-		{
-			hConsole.Print(XORSTR("Invalid key specified!"));
-			return;
+void Cmd_Unbind(eLine * cmd) {
+	if(cmd && cmd->wordCount()) {
+		int virtualKey;
+		if(strlen(cmd->getWord(0)) == 1) {
+			virtualKey = islower(cmd->getWord(0)[0]) ? _toupper(cmd->getWord(0)[0]) : cmd->getWord(0)[0];
+		} else {
+			virtualKey = HookConsole::KeyNameToCode(cmd->getWord(0));
+			if(virtualKey == -1) {
+				hConsole.Print(XORSTR("Invalid key specified!"));
+				return;
+			}
 		}
+		hConsole.RemoveBind(virtualKey);
 	}
-	hConsole.RemoveBind(l_virtualKey);
 }
 
-bool ScanForQuotes(_In_z_ const char * p_szSrc)
-{
-	const char * l_szQuotesStart = strchr(p_szSrc, '\"');
-	return (l_szQuotesStart && strchr(l_szQuotesStart+1, '\"'));
+bool ScanForQuotes(_In_z_ const char * str) {
+	auto quotesStart = strchr(str, '\"');
+	return (quotesStart && strchr(quotesStart+1, '\"'));
 }
 
-void Cmd_Bind(eLine * p_cmd)
-{
-	if(!p_cmd || p_cmd->wordCount() < 2)
-	{
+void Cmd_Bind(eLine * cmd) {
+	if(!cmd || cmd->wordCount() < 2) {
 		hConsole.Print(XORSTR("Bad command syntax. Argument missing"));
 		return;
 	}
 
-	bool l_isNamedKey = false;
-	int l_virtualKey = -1;
-	if(strlen(p_cmd->getWord(0)) == 1)
-		l_virtualKey = islower(p_cmd->getWord(0)[0]) ? _toupper(p_cmd->getWord(0)[0]) : p_cmd->getWord(0)[0];
-	else
-	{
-		l_virtualKey = HookConsole::KeyNameToCode(p_cmd->getWord(0));
-		if(l_virtualKey == -1)
+	bool isNamedKey = false;
+	int virtualKey = -1;
+	if(strlen(cmd->getWord(0)) == 1) {
+		virtualKey = islower(cmd->getWord(0)[0]) ? _toupper(cmd->getWord(0)[0]) : cmd->getWord(0)[0];
+	} else {
+		virtualKey = HookConsole::KeyNameToCode(cmd->getWord(0));
+		if(virtualKey == -1)
 		{
 			hConsole.Print(XORSTR("Invalid key specified!"));
 			return;
 		}
-		l_isNamedKey = true;
+		isNamedKey = true;
 	}
 
 	cmatch l_match;
-	if(ProcessRegex(p_cmd->getSource().c_str(), XORSTR("(?:\\w+|.) \"([^\"]+)\" \"([^\"]+)\""), l_match))
-	{
-		hConsole.AddBind(l_virtualKey, new HookBind(l_match.str(1), l_match.str(2), l_isNamedKey));
-	}
-	else
-	{
-		if(ScanForQuotes(p_cmd->getSource().c_str()))
-		{
-			string cmdSrc = p_cmd->getSource();
+	if(ProcessRegex(cmd->getSource().c_str(), XORSTR("(?:\\w+|.) \"([^\"]+)\" \"([^\"]+)\""), l_match)) {
+		hConsole.AddBind(virtualKey, new HookBind(l_match.str(1), l_match.str(2), isNamedKey));
+	} else {
+		if(ScanForQuotes(cmd->getSource().c_str())) {
+			string cmdSrc = cmd->getSource();
 			size_t pos = 0;
 			cmdSrc.erase(cmdSrc.begin(), cmdSrc.begin()+cmdSrc.find('"')+1);
 			while((pos = cmdSrc.find('\"')) != string::npos)
 				cmdSrc.erase(cmdSrc.begin()+pos, cmdSrc.begin()+pos+1);
-			hConsole.AddBind(l_virtualKey, new HookBind(cmdSrc, "", l_isNamedKey));
+			hConsole.AddBind(virtualKey, new HookBind(cmdSrc, "", isNamedKey));
 			return;
 		}
 
-		if(p_cmd->getWord(1)[0] == '+')
-		{
-			string downStr(&p_cmd->getWord(1)[1]);
+		if(cmd->getWord(1)[0] == '+') {
+			string downStr(&cmd->getWord(1)[1]);
 			string upStr = downStr;
 			downStr.append(" 1", 2);
 			upStr.append(" 0", 2);
-			hConsole.AddBind( l_virtualKey, new HookBind(downStr.c_str(), upStr.c_str(), l_isNamedKey) );
-		}
-		else
-		{
-			string bindString = p_cmd->getWord(1);
-			for (unsigned int i = 2; i < p_cmd->wordCount() ; ++i)
-			{
-				const char * word = p_cmd->getWord(i);
+			hConsole.AddBind( virtualKey, new HookBind(downStr.c_str(), upStr.c_str(), isNamedKey) );
+		} else {
+			string bindString = cmd->getWord(1);
+			for (unsigned int i = 2; i < cmd->wordCount() ; ++i) {
+				const char * word = cmd->getWord(i);
 				if(!word)
 					break;
 				bindString.append(" ", 1);
 				bindString.append(word, strlen(word));
 			}
-			hConsole.AddBind(l_virtualKey, new HookBind(bindString, "", l_isNamedKey));
+			hConsole.AddBind(virtualKey, new HookBind(bindString, "", isNamedKey));
 		}
 	}
 }

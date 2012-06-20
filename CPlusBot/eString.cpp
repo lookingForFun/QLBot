@@ -62,7 +62,7 @@ eLine::eLine( string line )
 		words.push_back(lineSrc.substr(lastPos, lineSrc.length() - lastPos));
 }
 
-const char *eLine::getWord(unsigned int wordNum)
+const char *eLine::getWord(unsigned int wordNum) const
 {
 	if(wordNum < words.size())
 		return words[wordNum].c_str();

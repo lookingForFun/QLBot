@@ -13,9 +13,9 @@ public:
 	eLine(const char * line);
 	eLine(string line);
 
-	const char *getWord(unsigned int wordNum);
+	const char *getWord(unsigned int wordNum) const;
 	std::string getSource() const { return lineSrc; }
-	size_t	    wordCount() { return words.size(); }
+	size_t	    wordCount() const { return words.size(); }
 
 private:
 	string			lineSrc;

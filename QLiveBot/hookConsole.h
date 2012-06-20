@@ -35,7 +35,7 @@ class HookConsole
 {
 public:
 	HookConsole();
-	bool					IsOpen() const { return bOpen; }
+	bool					IsOpen() const { return isOpen; }
 	void					Initialize();
 	void					Unload();
 	void					LoadSettings();
@@ -64,16 +64,16 @@ public:
 
 private:
 	void					RestoreBinds();
-	bool					CVarCommand(eLine currentCmd);
+	bool					CVarCommand(const eLine& currentCmd);
 	void					AddLine(const string& lineText, bool isCurrentLine = false);
 	void					Clear() {
 		lines.clear();
 	}
 	void					NEW_CMD(const char * x, void * y);
 	bool					bInitialized;
-	bool					bOpen;
-	string					sCurrentLine; //line being typed
-	int                     iCursorPosition;
+	bool					isOpen;
+	string					currentLine; //line being typed
+	int                     cursorPosition;
 	vector<string>			lines; //old ones
 	map<int, HookBind*>		binds;
 	map<string, void (*)(eLine*)>		commands;
