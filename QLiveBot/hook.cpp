@@ -104,12 +104,19 @@ __declspec(naked) void Stub_CG_EntityEvent()
 {
 	__asm
 	{
+		// save all registers and flags
 		pushad;
+		// Push the first argument of the original function
 		push [esp+0x24];
+		// Call the hooked function, which returns the address to which execution should continue
 		call Hook_CG_EntityEvent;
+		// Put the address to which the execution should continue on the stack
 		push eax;
+		// Adjust the stack pointer
 		add esp, 4
+		// Restore registers and flags
 		popad;
+		// Jump to where the execution should continue (as returned by Hook_CG_EntityEvent
 		jmp [esp-0x24];
 	}
 }
@@ -122,13 +129,18 @@ struct {
 
 __declspec(noinline) int CG_Init( int arg0, int arg1, int arg2 )
 {
+	// Make sure there's a valid tracing function for the aimbot and the autofire
 	ImportExport::CanSee = Engine::HasCleanPath;
+	// Initialize the console
 	Stub_ConsoleInitialize();
+	// Hook CG_EntityEvent
 	g_EntityEvent = unique_ptr<memoryDetour>(new memoryDetour((LPBYTE)(offsets.cg_entityevent), (LPBYTE)Stub_CG_EntityEvent, detourFuncs::DT_PUSHRET, 6));
 	g_EntityEvent->Enable();
+	// Hook CG_AddCEntity
 	g_AddCEnt = unique_ptr<memoryDetour>(new memoryDetour((LPBYTE)(offsets.cg_addcentity), (LPBYTE)Hook_CG_AddCEntity, detourFuncs::DT_PUSHRET) );
 	g_AddCEnt->Enable();
 	g_AddCEntityTramp = g_AddCEnt->GetTrampoline();
+	// Register all shaders NOW
 	Shaders[XORSTR("battleSuit")] = Original_Syscall(CG_R_REGISTERSHADER, XORSTR("powerups/battleSuit"));
 	Shaders[XORSTR("regen")] = Original_Syscall(CG_R_REGISTERSHADER, XORSTR("powerups/regen"));
 	Shaders[XORSTR("quad")] = Original_Syscall(CG_R_REGISTERSHADER, XORSTR("powerups/quad"));
@@ -141,22 +153,30 @@ __declspec(noinline) int CG_Init( int arg0, int arg1, int arg2 )
 	Shaders[XORSTR("hs2")] = Original_Syscall(CG_S_REGISTERSOUND, XORSTR("sound/feedback/hit2.ogg"));
 	Shaders[XORSTR("hs3")] = Original_Syscall(CG_S_REGISTERSOUND, XORSTR("sound/feedback/hit3.ogg"));
 	Shaders[XORSTR("fightSound")] = Original_Syscall(CG_S_REGISTERSOUND, XORSTR("sound/feedback/fight.ogg"));
+	// Reset any timer
 	timers.Clear();
+	// Reset all health counters
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 		healths[i] = 100;
-
+	// Reset accuracy counters
 	AccuracyManager::Init();
-
+	// Call the original VM_INIT callback
 	return vmCalls.Init(arg0, arg1, arg2);
 }
 
 __declspec(noinline) int CG_Shutdown()
 {
+	// Unload the console
 	Stub_ConsoleUnload();
+	// Save current internal cvars
 	ImportExport::SaveVariables();
+	// Re-enable GetProcAddress hook
 	g_GPAHook->Enable();
+	// Unhook CG_EntityEvent and release the trampoline
 	g_EntityEvent->Disable();
+	// Unhook CG_AddCEntity and release the trampoline
 	g_AddCEnt->Disable();
+	// Call the original VM_SHUTDOWN callback
 	vmCalls.Shutdown();
 	return 0;
 }
@@ -191,6 +211,7 @@ void __stdcall CG_DrawActiveFrame(int serverTime, int, int)
 	}
 }
 
+// FIXME: dirty, can this be done in a nicer way?
 __declspec(naked) int Stub_CG_DrawActiveFrame(int, int, int)
 {
 #define ARGS_SIZE 0xC
@@ -211,7 +232,7 @@ __declspec(naked) int Stub_CG_DrawActiveFrame(int, int, int)
 	}
 }
 
-
+// HACK: getting around nasty vararg stuff
 __declspec(naked) int Original_Syscall(int, ...)
 {
 	static void * tmp_esp = 0;
@@ -247,7 +268,7 @@ retlabel:
 }
 
 
-
+// HIGH PRIORITY: rewrite this as something a human can read
 __declspec(naked) void Hook_CG_AddCEntity()
 {
 	__asm
