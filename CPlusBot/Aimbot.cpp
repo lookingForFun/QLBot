@@ -170,7 +170,7 @@ float Aimbot::AdvancedHumanization( float distance, idVec3 targetVelocity )
 #pragma warning(disable: 4244)
 idAngles Aimbot::Humanize( float smoothMultiplier, float smoothTransposition, idAngles inAngles )
 {
-	float smoothMultiplier = 1.0f + AdvancedHumanization( ImportExport::User->DistanceTo( TargetOrigin() ), 
+	smoothMultiplier = 1.0f + AdvancedHumanization( ImportExport::User->DistanceTo( TargetOrigin() ), 
 		CurrentTarget()->Velocity() ) * ImportExport::Variables[SMOOTHADVANCEDSCALING]->FloatValue();
 
 	if(ImportExport::Variables[NEWHUMANIZATION]->IntValue())
